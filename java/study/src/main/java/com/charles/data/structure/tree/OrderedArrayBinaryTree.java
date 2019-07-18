@@ -10,6 +10,7 @@ package com.charles.data.structure.tree;
  *     第n个元素的右子节点为 2 * n + 2
  *     第n个元素的父节点为 ( n - 1 ) / 2
  *
+ *
  * </pre>
  *
  * @author CharlesLee
