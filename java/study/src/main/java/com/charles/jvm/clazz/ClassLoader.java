@@ -112,6 +112,14 @@ import java.util.UUID;
  *
  * jvm规范允许类加载器在预料某个类将要被使用的时候预先加载它,如果在预先加载的过程中遇到了.class文件的缺失或错误,类加载器必须在程序
  * 首次主动使用该类的时候才报告错误{@link LinkageError},所以如果这个类一直没有被程序主动使用,那么类加载器不会报告错误
+ *
+ * 双亲委派机制的好处
+ *     1,可以确保java核心类库的安全: 所有的java都至少会引用 {@link Object}类 记为a类, 也就是运行期,这个a类会被加载到jvm虚拟机中, 如果这个加载过程
+ *  是由用户自己定义的,那么很可能在jvm中存在多个版本的a类,且这些类互不兼容,互不可见(命名空间发挥的作用). 但是借助于双亲委派机制,就可以确保核心类库的
+ *  类的加载工作都是由根类加载器统一完成,从而确保java应用和使用者都是同一版本的java核心类库,他们之间就是相互兼容的
+ *     2,可以确保java核心类库所提供的类不会被自定义的类所替代
+ *     3,不同的类加载器可以为相同名称的类创建额外的命名空间, 相同名称的类可以并存在java虚拟机中,只需要用不同的类加载器来加载他们即可,不同的类加载器
+ *  所加载的类之间是不兼容的,这就相当于在java虚拟机内部创建了一个有一个相互隔离的java类空间,这类技术在很多框架中都的到了应用
  * </pre>
  *
  * @author CharlesLee
@@ -119,7 +127,7 @@ import java.util.UUID;
 public class ClassLoader {
     public static void main(String[] args) throws Exception {
         java.lang.ClassLoader loader = new MyClassLoader();
-        MyClassLoader.testMyClassLoader(loader, "java.lang.String");
+        MyClassLoader.testMyClassLoader(loader, "com.charles.jvm.clazz.MyCat");
     }
 }
 
@@ -253,7 +261,6 @@ class MyClassLoader extends java.lang.ClassLoader {
 
     public MyClassLoader() {
         super();
-        System.out.println("自定义classLoader输出了：" + MyClassLoader.class.getName());
     }
 
     @Override
@@ -270,7 +277,8 @@ class MyClassLoader extends java.lang.ClassLoader {
      * 定义读取class字节的方法
      */
     private byte[] loadClassData(String className) {
-        className = className.replaceAll("\\.", File.separator);
+        className = className.replace("\\.", File.separator);
+        System.out.println(className);
         try (FileInputStream in = new FileInputStream(new File(className + ".class"));
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             byte[] bytes = new byte[24];
@@ -283,5 +291,18 @@ class MyClassLoader extends java.lang.ClassLoader {
             e.printStackTrace();
         }
         return null;
+    }
+}
+
+class MyCat {
+    public MyCat() {
+        System.out.println(" MyCat " + this.getClass().getClassLoader());
+        new MySample();
+    }
+}
+
+class MySample {
+    public MySample() {
+        System.out.println(" MySample " + this.getClass().getClassLoader());
     }
 }
